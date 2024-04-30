@@ -1,0 +1,115 @@
+```{r}
+library(tidyverse)
+library(stats)
+library(factoextra)
+library(glue)
+library(cowplot)
+library(ggrepel)
+
+# metadata
+meta <- read_tsv("~/Desktop/samples.tsv")
+meta$short_basenames <- sub("^.*Mmelodia_(.*)$", "\\1", meta$`file name`)
+
+# coverage names
+coverage_list <- c("cov_1", "cov_3", "cov_5", "cov_7", "cov_10", "cov_15", "cov_20")
+
+# fetching covariance matrices
+create_matrix <- function(filename) {
+    data <- read_delim(filename, delim=" ", col_names=FALSE)
+    matrix_data <- as.matrix(data)
+    e <- eigen(matrix_data)
+    return(e)
+}
+
+covarience_out_list <- lapply(coverage_list, function(item) paste0("~/Desktop/pcangsd/pcangsd_", item, "_output.cov"))
+matrix_list <- lapply(covarience_out_list, create_matrix)
+
+# fetching file names
+create_file_names <- function(filename) {
+    data <- read_lines(filename)
+    basenames <- basename(data)
+    df <- data.frame(basenames)
+    df$short_basenames <- sub("^.*Mmelodia_(.*)_aligned_reads_sorted.bam$", "\\1", df$basenames)
+    df$index <- seq(from=1, to=nrow(df))
+    item <- gsub("^.*bam_list_(.*)\\.txt$", "\\1", basename(filename))
+    df$cov <- item
+    return(df)
+}
+
+bam_list <- lapply(coverage_list, function(item) paste0("~/Desktop/pcangsd/bam_list_", item, ".txt"))
+file_names <- lapply(bam_list, create_file_names)
+```
+
+```{r, fig.height=15, fig.width=10}
+# creating pca plots
+plot_list <- c()
+clusters <- 4
+for (i in 1:length(file_names)) {
+    names <- file_names[[i]]
+    e_matrix <- matrix_list[[i]]
+    
+    vals <- e_matrix$values / sum(e_matrix$values)
+    vals <- sort(vals, decreasing=TRUE)
+    vals <- vals * 100
+    PC1_per <- round(vals[1], 2)
+    PC2_per <- round(vals[2], 2)
+    
+    km.res <- kmeans(e_matrix$vectors[,1:2], clusters, nstart=100)
+    vectors <- data.frame(e_matrix$vectors)
+    vectors$colors <- as.factor(km.res$cluster)
+    vectors$index <- seq(from=1, to=nrow(vectors))
+    vectors <- left_join(vectors, names, by="index")
+    vectors <- left_join(vectors, meta, by="short_basenames")
+    
+    plot1 <- vectors |> 
+        ggplot(aes(x=X1, y=X2, color=colors, shape=group)) +
+            geom_point(size =1.5, ) +
+            labs(title=coverage_list[i],
+                 x=glue("PC1: {PC1_per}%"),
+                 y=glue("PC2: {PC2_per}%"),
+                 color="Kmeans Cluster") +
+            # geom_text_repel(aes(label=short_basenames),
+            #         size=1,
+            #         max.overlaps = Inf,
+            #         segment.color = NA,
+            #         na.rm = TRUE) +
+            theme_cowplot() #+
+            #scale_color_manual(values=c("red", "blue", "green", "black"))
+    
+    if (vectors$cov[1] == "cov_20") {
+        legend <- get_legend(plot1 + theme(legend.justification="center"))
+        plot1 <- plot1 + theme(legend.position = "none")
+    } else {
+     plot1 <- plot1 + theme(legend.position = "none")       
+    }
+
+    e_vals <- data.frame(sort(e_matrix$values, decreasing = TRUE))
+    e_vals$e_num <- seq(from=1, to=nrow(e_vals))
+    names(e_vals) <- c("e_values", "e_num")
+    plot2 <- e_vals |> 
+        ggplot(aes(x=e_values, y=e_num)) +
+            geom_point() +
+            geom_line() +
+            labs(title="Eigenvalues",
+                 x="",
+                 y="") +
+            theme_cowplot() +
+            scale_y_reverse()
+        
+    
+    plot <- plot_grid(plot1, plot2, rel_widths=c(2,1), ncol=2)
+    
+    plot_list[[i]] <- plot
+}
+print(legend)
+plot_list[[length(plot_list) + 1]] <- legend
+combined_plot <- plot_grid(plotlist = plot_list, ncol = 2)
+print(combined_plot)
+#ggsave("~/Desktop/combined_plot.png", plot = combined_plot, width = 10, height = 15, units = "in", dpi = 300)
+
+```
+
+
+
+
+

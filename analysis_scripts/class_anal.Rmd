@@ -1,0 +1,236 @@
+---
+title: "class_anal"
+output: pdf_document
+date: "2024-04-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse)
+require(knitr)
+require(kableExtra)
+require(cowplot)
+require(ggpubr)
+```
+
+```{r cars}
+# locations
+out_dir <- "~/Desktop/proj_stats/"
+stats <- "~/Desktop/proj_stats/"
+
+# reading in the data
+df <- read.csv2(paste0(stats, "out.csv"), sep=",")
+df <- df |> 
+    mutate(X.rname = as.factor(X.rname),
+           meandepth = as.double(meandepth))
+
+# adding in read bp stats
+read_bp <- read.csv2(paste0(out_dir, "Mmelodia_file_numbered_reads"), sep=" ", header = FALSE)
+read_bp$V2 <- substr(read_bp$V2, 1, nchar(read_bp$V2) - 1)
+read_bp <- read_bp |> 
+    select(V2, V3)
+names(read_bp) <- c("Filename", "read_bp")
+
+# adding read bp to data + removing shitty raw read data
+df <- right_join(df, read_bp, by = "Filename") |> 
+    filter(Filename != "L1_S29_2471-03658_Mmelodia_PonquogueBeach-NY_2022") |> 
+    filter(Filename != "L1_S25_2831-61178_Mmelodia_GreatBayBlvdWMA-NJ_2021")
+
+# make the coverage targets in order
+level_order = c("cov_1","cov_3","cov_5","cov_7","cov_10","cov_15","cov_20","full")
+df$coverage_target <- factor(df$coverage_target, levels = level_order)
+```
+
+```{r}
+cov_tab <- df |>     
+    select(Filename, read_Count, scaffold_type, read_bp) |> 
+    filter(scaffold_type == "NC") |> 
+    group_by(Filename) |> 
+    summarise(cov = floor((mean(read_Count) / 2) / ifelse(mean(read_bp) == 150, 2545000, 1592000)),
+              mean_rc = mean(read_Count) / 2,
+              num_used = ifelse(mean(read_bp) == 150, 2545000, 1592000)) 
+
+
+new_lines <- data.frame(Filename = c(),
+                        Reads = c(),
+                        Coverage = c())
+
+# Iterate over each row in the dataframe
+for (i in 1:nrow(cov_tab)) {
+  # Extract values from the current row
+  name <- cov_tab$Filename[i]
+  cov_to_seq <- cov_tab$cov[i]
+  num_read <- cov_tab$num_used[i]
+  
+  sequence <- list(1, 3, 5, 7, 10, 15, 20)
+  sequence  <- sequence[sequence <= cov_to_seq]
+  # Create the sequence
+  
+  for (j in sequence) {
+      new_row <- data.frame(Filename = c(name),
+                            Reads = c(j * num_read),
+                            Coverage = c(j))
+      new_lines <- rbind(new_lines, new_row)
+  }
+}
+
+#new_lines$Filename <- paste0(new_lines$Filename, "_")
+
+#write.table(new_lines, file = "Mmelodia_slurm_input_with_reads", sep = " ", col.names = FALSE, row.names = TRUE, quote = FALSE)
+
+
+kable(cov_tab) |> 
+ kable_styling(bootstrap_options = "bordered") |>
+ as_image(file = "cov.png") 
+```
+
+
+```{r, echo=FALSE}
+by_file <- df |> 
+    ggplot(aes(x=scaffold_type, y=meandepth)) +
+        geom_boxplot() +
+        facet_wrap(vars(Filename)) +
+        ylim(0, 150)
+by_file
+
+by_scaffold_type <- df |> 
+    ggplot(aes(x=X.rname, y=meandepth)) +
+        geom_boxplot() +
+        ylim(0, 150) +
+    theme(axis.text.x = element_text(angle = 180, size = 3))
+by_scaffold_type
+
+```
+
+```{r}
+depth_table_by_scaffold <- df |> 
+    select(X.rname, meandepth) |> 
+    group_by(X.rname) |> 
+    summarise(mean_depth = mean(meandepth))
+
+kable(depth_table_by_scaffold)
+
+depth_table_total_by_scaffold_type <- df |> 
+    select(scaffold_type, meandepth) |> 
+    group_by(scaffold_type) |> 
+    summarise(mean_depth = mean(meandepth))
+
+kable(depth_table_total_by_scaffold_type)
+
+depth_table_by_file_scaffold_type <- df |> 
+    select(Filename, scaffold_type, meandepth) |> 
+    group_by(Filename, scaffold_type) |> 
+    summarise(mean_depth = mean(meandepth))
+
+out <- "mean_depth_by_file.png"
+
+#kable(depth_table_by_file_scaffold_type) |> 
+#    kable_styling(bootstrap_options = "bordered") |>
+#   as_image(file = out)
+#mean(df$"meandepth")
+```
+
+```{r}
+one_X_coverage <- df |> 
+    select(Filename, meandepth, read_Count, scaffold_type, read_bp, coverage_target) |>
+    group_by(Filename, scaffold_type, read_bp, coverage_target) |> 
+    summarise(one_X_cov_med = median(read_Count) / median(meandepth),
+              one_X_cov_mean = mean(read_Count) / mean(meandepth),
+              read_Count_median = median(read_Count),
+              meandepth_median = median(meandepth),
+              read_Count_mean = mean(read_Count),
+              meandepth_mean = mean(meandepth))
+              
+
+one_x_tab <- one_X_coverage |> 
+    group_by(scaffold_type, read_bp) |> 
+    summarise(one_x_median_per_fastq = median(one_X_cov_med) / 2,
+              one_x_mean_per_fastq = mean(one_X_cov_mean) / 2) 
+
+one_x_tab
+
+```
+
+```{r}
+df |> 
+    select(coverage, meandepth, scaffold_type, coverage_target) |> 
+    group_by(scaffold_type, coverage_target) |> 
+    summarise(mean_depth = mean(meandepth))
+```
+
+
+```{r, fig.height=20, fig.width=5}
+one_X_coverage |> 
+    select(Filename, one_X_cov_mean, scaffold_type, coverage_target) |> 
+    ggplot(aes(x=Filename, y=one_X_cov_mean/1e7, color=scaffold_type)) +
+        geom_point() +
+        theme_minimal() +
+        labs(x="Filename", y="Count of Reads in 1X coverage (10 Millions)", color="Scaffold Type") +
+        theme(axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=3)) +
+        scale_color_manual(values = c("forestgreen", "pink")) +
+        facet_wrap(~ coverage_target, ncol = 1)
+ggsave(paste0(out_dir, "one_X_coverage_by_file_plot.png"), height = 20, width = 5)
+
+#kable(one_X_coverage) |> 
+#    kable_styling(bootstrap_options = "bordered") |>
+#    as_image(file = "one_X_coverage_by_file.png")
+```
+
+
+```{r}
+df |>
+    select(meandepth, read_Count, Filename, scaffold_type) |> 
+    group_by(Filename, scaffold_type) |> 
+    summarise(read_count = median(read_Count) / 1e8,
+              median_depth = median(meandepth)) |> 
+    ggplot(aes(x=read_count, y=median_depth, color=scaffold_type)) +
+        geom_point() +
+        labs(x="Median Read Count (100 millions)", y="Median Scaffold Depth", color="Scaffold Type") +
+        geom_line(aes(group=Filename), color = "black", alpha = 0.5) +
+        geom_smooth(method = "lm", se=FALSE, size=0.5) +
+        #stat_cor(aes(label = ..rr.label..), label.x = 0.75) +
+        stat_regline_equation() +
+        theme_minimal() +
+        scale_color_manual(values = c("forestgreen", "pink"))
+ggsave("depth_by_read_count_median.png", height = 5, width = 7)
+```
+
+```{r, fig.height=30, fig.width=10}
+depth_table_by_file_scaffold_type |> 
+    ggplot(aes(x=scaffold_type, y=mean_depth, fill=scaffold_type)) +
+        geom_col() +
+        coord_flip() +
+    
+        facet_wrap(vars(Filename), ncol=1, strip.position = "left") +
+        theme_minimal() +
+        theme(strip.text.y.left = element_text(angle = 0),
+              strip.background.y = element_blank(),
+              axis.text.y = element_blank(),
+              axis.ticks.y = element_blank(),
+              plot.background = element_rect(fill = "white")) +
+        scale_fill_manual(values = c("forestgreen", "pink"))
+ggsave("depth_by_file.png", height = 30, width = 10)
+```
+
+```{r, fig.height=30, fig.width=5}
+df |> 
+    select(X.rname, meandepth, scaffold_type) |> 
+    ggplot(aes(x=X.rname, y=meandepth, fill=as.factor(scaffold_type))) +
+        geom_boxplot() +
+        coord_flip() +
+        #ylim(0, 150) +
+        theme_minimal() +
+        scale_fill_manual(values = c("forestgreen", "pink"))   
+ggsave("depth_by_scaffold.png", height = 30, width = 10)
+```
+
+```{r}
+depth_table_by_file_scaffold_type |> 
+    ggplot(aes(x=mean_depth, fill=scaffold_type)) +
+        geom_histogram(alpha=0.750, position = "identity") +
+        theme_minimal() +
+        scale_fill_manual(values = c("forestgreen", "pink"))
+ggsave("hist_depths.png", height = 5, width = 7)
+```
+
+

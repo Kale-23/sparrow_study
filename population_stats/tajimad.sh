@@ -1,24 +1,32 @@
 #!/bin/bash
+
+#SBATCH --job-name=TD
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --output=/mnt/lz01/plachetzki/kcd1021/working_dir/913_project/output/TD/%j.out
+#SBATCH --exclude=node\[117-118\]
+
 ##  Supply coverage directories space-separated in INDIRS , e.g. 
 #INDIRS="premise_1x_cov/bcf_out/  premise_5x_cov/bcf_out/"  
-INDIRS="premise_1x_cov/bcf_out/sandbox/"
+#INDIRS="cov_1/bcf_out/ cov_3/bcf_out/ cov_5/bcf_out/ cov_7/bcf_out/ cov_10/bcf_out/ cov_15/bcf_out/ cov_20/bcf_out/"
 
-# Alter ROOT for system-specific locality. 
-ROOT="/home/unhTW/share/mcbs913_2024/group3/" 
+## Alter ROOT for system-specific locality. 
+#ROOT="~/working_dir/913_project/subs/" 
 
-usage() {
-	echo "You must specify the number of threads for bcftools merge"
-	exit 1
-}
-
-if [ $# -lt 1 ]; then
-	usage
-fi 
-GREEDY=$1
+#usage() {
+#	echo "You must specify the number of threads for bcftools merge"
+#	exit 1
+#}
+#
+#if [ $# -lt 1 ]; then
+#	usage
+#fi 
+INDIRS=$1/bcf_out/
+GREEDY=24 #threads
 PWD=$(pwd) 
 
 for dir in $INDIRS ; do  # Loop over all coverages
-	FULLP=$ROOT$dir
+	FULLP=$dir
 	echo $FULLP
 	
 	echo "0)"
@@ -47,7 +55,7 @@ for dir in $INDIRS ; do  # Loop over all coverages
 	cd $FULLP
 	for basen in $ALLFILES; do
 		if ! [ -f $basen".gz.csi" ]; then
-			bcftools index $basen".gz" 
+			bcftools index --threads $GREEDY $basen".gz" 
 		fi
 	done
 	cd $PWD 
@@ -64,7 +72,7 @@ for dir in $INDIRS ; do  # Loop over all coverages
 	echo "4)"
 	#  4) Perform population statistic using the monolith.
 	#    This is not multithreaded, but is luckily very fast. 
-	OUTF=$FULLP"population_"   # supplied output file.
+    OUTF=$FULLP"population_$(basename $(dirname $FULLP) | tr -d '/')"   # supplied output file.
 	TAJIMA=$OUTF".Tajima.D"  # the output file actually created.
 	vcftools --gzvcf $MONOVCF --TajimaD 71243 --out $OUTF
 

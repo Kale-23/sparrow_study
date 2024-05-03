@@ -40,76 +40,155 @@ bam_list <- lapply(coverage_list, function(item) paste0("~/Desktop/pcangsd/bam_l
 file_names <- lapply(bam_list, create_file_names)
 ```
 
-```{r, fig.height=15, fig.width=10}
-# creating pca plots
-plot_list <- c()
-clusters <- 4
-for (i in 1:length(file_names)) {
-    names <- file_names[[i]]
-    e_matrix <- matrix_list[[i]]
-    
-    vals <- e_matrix$values / sum(e_matrix$values)
-    vals <- sort(vals, decreasing=TRUE)
-    vals <- vals * 100
-    PC1_per <- round(vals[1], 2)
-    PC2_per <- round(vals[2], 2)
-    
-    km.res <- kmeans(e_matrix$vectors[,1:2], clusters, nstart=100)
-    vectors <- data.frame(e_matrix$vectors)
-    vectors$colors <- as.factor(km.res$cluster)
-    vectors$index <- seq(from=1, to=nrow(vectors))
-    vectors <- left_join(vectors, names, by="index")
-    vectors <- left_join(vectors, meta, by="short_basenames")
-    
-    plot1 <- vectors |> 
-        ggplot(aes(x=X1, y=X2, color=colors, shape=group)) +
-            geom_point(size =1.5, ) +
-            labs(title=coverage_list[i],
-                 x=glue("PC1: {PC1_per}%"),
-                 y=glue("PC2: {PC2_per}%"),
-                 color="Kmeans Cluster") +
-            # geom_text_repel(aes(label=short_basenames),
-            #         size=1,
-            #         max.overlaps = Inf,
-            #         segment.color = NA,
-            #         na.rm = TRUE) +
-            theme_cowplot() #+
-            #scale_color_manual(values=c("red", "blue", "green", "black"))
-    
-    if (vectors$cov[1] == "cov_20") {
-        legend <- get_legend(plot1 + theme(legend.justification="center"))
-        plot1 <- plot1 + theme(legend.position = "none")
-    } else {
-     plot1 <- plot1 + theme(legend.position = "none")       
-    }
 
-    e_vals <- data.frame(sort(e_matrix$values, decreasing = TRUE))
-    e_vals$e_num <- seq(from=1, to=nrow(e_vals))
-    names(e_vals) <- c("e_values", "e_num")
-    plot2 <- e_vals |> 
-        ggplot(aes(x=e_values, y=e_num)) +
-            geom_point() +
-            geom_line() +
-            labs(title="Eigenvalues",
-                 x="",
-                 y="") +
-            theme_cowplot() +
-            scale_y_reverse()
+```{r, fig.height=15, fig.width=10, echo=FALSE, message=FALSE, error=FALSE}
+# creating pca plots
+only_full_names <- file_names[[7]]$short_basenames # change back to 7
+cluster_to_uniq_df <- data.frame(coverage = c(), num = c(), pc_count = c(), data = c(), clust_count = c())
+#clusters <- 6
+pcs_for_kmeans <- 4
+plot_list <- c()
+
+for (clusters in 1:10) {
+for (j in 1:15) {
+    for (i in 1:length(file_names)) {
+        names <- file_names[[i]]
+        e_matrix <- matrix_list[[i]]
+        vals <- e_matrix$values / sum(e_matrix$values)
+        vals <- sort(vals, decreasing=TRUE)
+        vals <- vals * 100
+        PC1_per <- round(vals[1], 2)
+        PC2_per <- round(vals[2], 2)
+        km.res <- kmeans(e_matrix$vectors[,1:j], clusters, nstart=100)
+        vectors <- data.frame(e_matrix$vectors)
+        vectors$colors <- as.factor(km.res$cluster)
+        vectors$index <- seq(from=1, to=nrow(vectors))
+        vectors <- left_join(vectors, names, by="index")
+        vectors <- left_join(vectors, meta, by="short_basenames")
+        vectors$group <- as.factor(vectors$group)
         
-    
-    plot <- plot_grid(plot1, plot2, rel_widths=c(2,1), ncol=2)
-    
-    plot_list[[i]] <- plot
-}
-print(legend)
-plot_list[[length(plot_list) + 1]] <- legend
-combined_plot <- plot_grid(plotlist = plot_list, ncol = 2)
-print(combined_plot)
+        # all files in each coverage level
+        vect_out <- vectors |>
+            select(colors, group) |>
+            group_by(colors) |>
+            summarise(val = length(unique(group))) |>
+            summarise(sum(val) / length(colors))
+        
+        cluster_to_uniq_df <- rbind(cluster_to_uniq_df, data.frame(coverage=vectors$cov[1],
+                                                                   num=vect_out,
+                                                                   pc_out=j,
+                                                                   data="all",
+                                                                   clust_count=clusters))
+        
+        #only files that make it through full coverage
+        vect_out2 <- vectors |>
+            select(colors, group, short_basenames) |>
+            filter(short_basenames %in% only_full_names) |>
+            group_by(colors) |>
+            summarise(val = length(unique(group))) |>
+            summarise(sum(val) / length(colors))
+        
+        cluster_to_uniq_df <- rbind(cluster_to_uniq_df, data.frame(coverage=vectors$cov[1],
+                                                                   num=vect_out2,
+                                                                   pc_out=j,
+                                                                   data="full",
+                                                                   clust_count=clusters))
+        
+    # if (j == pcs_for_kmeans) {
+    #     cov_num <- as.integer(sub("^cov_(.*)$", "\\1", coverage_list[i])) / 2
+    #     plot1 <- vectors |>
+    #         ggplot(aes(x=X1, y=X2, color=colors, shape=group)) +
+    #             geom_point(size =1.5, ) +
+    #             labs(title=glue("{cov_num}x Coverage"),
+    #                  x=glue("PC1: {PC1_per}%"),
+    #                  y=glue("PC2: {PC2_per}%"),
+    #                  color="Kmeans Cluster") +
+    #             # geom_text_repel(aes(label=short_basenames),
+    #             #         size=1,
+    #             #         max.overlaps = Inf,
+    #             #         segment.color = NA,
+    #             #         na.rm = TRUE) +
+    #             theme_cowplot() #+
+    #             #scale_color_manual(values=c("red", "blue", "green", "black"))
+    # 
+    #     if (vectors$cov[1] == "cov_20") {
+    #         legend <- get_legend(plot1 + theme(legend.justification="center"))
+    #         plot1 <- plot1 + theme(legend.position = "none")
+    #     } else {
+    #         plot1 <- plot1 + theme(legend.position = "none")
+    #     }
+    #     
+    #     e_vals <- data.frame(sort(e_matrix$values, decreasing = TRUE))
+    #     e_vals$e_num <- seq(from=1, to=nrow(e_vals))
+    #     names(e_vals) <- c("e_values", "e_num")
+    #     plot2 <- e_vals |>
+    #         ggplot(aes(x=e_values, y=e_num)) +
+    #             geom_point() +
+    #             geom_line() +
+    #             labs(title="Eigenvalues",
+    #                  x="",
+    #                  y="") +
+    #             theme_cowplot() +
+    #             scale_y_reverse() +
+    #             theme(plot.title=element_text(size=8),
+    #                   axis.text.x=element_text(size=8))
+    #     
+    #     plot <- plot_grid(plot1, plot2, NULL, rel_widths=c(3,0.9,0.1), ncol=3)
+    #     plot_list[[i]] <- plot
+    #     }
+    }
+}}
+# plot_list[[length(plot_list) + 1]] <- legend
+# combined_plot <- plot_grid(plotlist = plot_list, ncol = 2)
+# print(combined_plot)
+#ggsave("~/Desktop/combined_plot.png", plot = combined_plot, width = 10, height = 15, units = "in", dpi = 300)
+
 #ggsave("~/Desktop/combined_plot.png", plot = combined_plot, width = 10, height = 15, units = "in", dpi = 300)
 
 ```
 
+```{r, fig.width=15, fig.height=7.5}
+custom_labels <- c(all = "All Files", full = "Only Full Files")
 
+cluster_to_uniq_df$coverage <- factor(cluster_to_uniq_df$coverage, levels=coverage_list, ordered=TRUE)
 
+cluster_to_uniq_df |> 
+    select(data, )
 
+cluster_to_uniq_df |>
+    ggplot(aes(x=coverage, y=sum.val..length.colors., fill=pc_out)) +
+        geom_bar(stat="identity", position=position_dodge2(width=0)) +
+        labs(title="RefSeq Genome",
+             x="Coverage",
+             y="That Value That You Wanted",
+             fill = "PCs used in cluster") +
+        scale_x_discrete(labels=c("0.5x", "1.5x", "2.5x", "3.5x", "5x", "7.5x", "10x")) +
+        theme_minimal() +
+        theme(plot.title=element_text(size=10),
+              axis.text.x=element_text(size=10)) +
+        scale_fill_gradient(low="#ffd60a", high="#000814") +
+        facet_wrap(~ data, labeller=as_labeller(custom_labels), nrow=2)
+
+cluster_to_uniq_df |>
+    ggplot(aes(x=coverage, y=sum.val..length.colors., fill=data)) +
+        geom_boxplot() +
+        labs(title="RefSeq Genome",
+             x="Coverage",
+             y="That Value That You Wanted") +
+        scale_x_discrete(labels=c("0.5x", "1.5x", "2.5x", "3.5x", "5x", "7.5x", "10x")) +
+        theme_minimal() +
+        theme(plot.title=element_text(size=10),
+              axis.text.x=element_text(size=10)) +
+        scale_fill_manual(values=c("pink", "green")) +
+        facet_wrap(~ clust_count)
+        #scale_fill_gradient(low="#ffd60a", high="#000814") 
+```
+```{r}
+line = 1
+last_var = NA
+choices = c("Y", "N")
+
+ifelse(line %% 2 == 0, {cyano = ifelse(last_var == "N", "Y", "N"); line = line + 1}, {choice = sample(choices, 1); last_var = choice; cyano = choice; line = line + 1})
+
+```
 

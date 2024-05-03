@@ -1,0 +1,67 @@
+```{r, echo=FALSE, warning=FALSE}
+library(tidyverse); library(cowplot); library(gganimate)
+files <- list.files(path = "~/Desktop/Current_Classes/Applied_bioinformatics/sparrow_study/population_stats/", pattern = "*.D", full.names = TRUE)
+data_list <- lapply(files, read_tsv)
+data_list <- lapply(seq_along(data_list), function(i) {
+    temp_val <- sub('.*_(.*?)\\..*', '\\1', basename(files[i]))
+    if (temp_val == "full") {
+        data_list[[i]]$coverage <- temp_val
+    } else {
+        data_list[[i]]$coverage <- as.double(temp_val) / 2
+    }
+  return(data_list[[i]])
+})
+data <- do.call(rbind, data_list)
+rm(data_list)
+rm(files)
+```
+
+```{r}
+data <- data |> 
+    filter(N_SNPS >= 10) |> 
+    filter(startsWith(CHROM, "NC")) |> 
+    filter(coverage != "full")
+
+ordered_levels <- c("0.5", "1.5", "2.5", "3.5", "5", "7.5", "10", "full")
+data$coverage <- factor(data$coverage, ordered=TRUE, levels=ordered_levels)
+rm(ordered_levels)
+
+unique(data$coverage)
+
+chrom_levels <- c(1:31, "W", "Z") 
+chrom_refseq_levels <- unique(data$CHROM)
+for (i in 1:nrow(data)) {
+    index <- match(data$CHROM[i], chrom_refseq_levels)
+    data$CHROM[i] <- chrom_levels[index]
+}
+rm(i)
+rm(index)
+
+data$CHROM <- factor(data$CHROM, ordered=TRUE, levels=chrom_levels)
+rm(chrom_levels)
+rm(chrom_refseq_levels)
+```
+
+```{r, fig.height=6, fig.width=5}
+td_chrom <- data |> 
+    ggplot(aes(x=CHROM, y=TajimaD)) +
+        geom_point(aes(alpha=0.5), size=1) +
+        geom_hline(yintercept=0, linetype="longdash") +
+        facet_wrap(~ coverage, ncol=2) +
+        #theme_cowplot() +
+        theme_minimal_grid() +
+        theme(axis.text.x = element_text(angle=90, size=4),
+              legend.position = "none")
+td_chrom
+
+td_hist_chrom <- data |> 
+    ggplot(aes(x=TajimaD)) +
+        geom_histogram(stat="bin") +
+        theme_minimal_grid() +
+        #facet_wrap(~ coverage, ncol=2) +
+        #theme_cowplot() +
+        transition_states(states = coverage, transition_length = 2, state_length = 1)
+animate(td_hist_chrom)
+```
+
+

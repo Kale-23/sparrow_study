@@ -1,5 +1,7 @@
 ```{r, echo=FALSE, warning=FALSE}
-library(tidyverse); library(cowplot); library(gganimate)
+library(tidyverse); library(cowplot)
+library(glue)
+library(gganimate); library(gifski)
 files <- list.files(path = "~/Desktop/Current_Classes/Applied_bioinformatics/sparrow_study/population_stats/", pattern = "*.D", full.names = TRUE)
 data_list <- lapply(files, read_tsv)
 data_list <- lapply(seq_along(data_list), function(i) {
@@ -22,7 +24,7 @@ data <- data |>
     filter(startsWith(CHROM, "NC")) |> 
     filter(coverage != "full")
 
-ordered_levels <- c("0.5", "1.5", "2.5", "3.5", "5", "7.5", "10", "full")
+ordered_levels <- c("0.5", "1.5", "2.5", "3.5", "5", "7.5", "10")
 data$coverage <- factor(data$coverage, ordered=TRUE, levels=ordered_levels)
 rm(ordered_levels)
 
@@ -42,17 +44,22 @@ rm(chrom_levels)
 rm(chrom_refseq_levels)
 ```
 
-```{r, fig.height=6, fig.width=5}
+```{r,}
 td_chrom <- data |> 
     ggplot(aes(x=CHROM, y=TajimaD)) +
         geom_point(aes(alpha=0.5), size=1) +
         geom_hline(yintercept=0, linetype="longdash") +
-        facet_wrap(~ coverage, ncol=2) +
+        #facet_wrap(~ coverage, ncol=2) +
         #theme_cowplot() +
         theme_minimal_grid() +
-        theme(axis.text.x = element_text(angle=90, size=4),
-              legend.position = "none")
-td_chrom
+        theme(axis.text.x = element_text(angle=90, size=6),
+              legend.position = "none") +
+        labs(x="Chromosome",
+             y="Tajima's D") +
+        ggtitle('Coverage {closest_state}x') +
+        transition_states(states = coverage, transition_length = 3, state_length = 5)
+animate(td_chrom, fps=20, duration=10, res=150, height=3, width=5, units="in")
+anim_save("~/Desktop/Current_Classes/Applied_Bioinformatics/sparrow_study/population_stats/TD_chrom_anim.gif")
 
 td_hist_chrom <- data |> 
     ggplot(aes(x=TajimaD)) +
@@ -60,8 +67,13 @@ td_hist_chrom <- data |>
         theme_minimal_grid() +
         #facet_wrap(~ coverage, ncol=2) +
         #theme_cowplot() +
-        transition_states(states = coverage, transition_length = 2, state_length = 1)
-animate(td_hist_chrom)
+        labs(x="Tajima's D",
+             y="Count") +
+        ggtitle('Coverage {closest_state}x') +
+        #labs(title=paste("Coverage:", data$coverage[current_frame()] )) +
+        transition_states(states = coverage, transition_length = 2, state_length = 5)
+animate(td_hist_chrom, fps=20, duration=10, res=150, height=3, width=5, units="in")
+anim_save("~/Desktop/Current_Classes/Applied_Bioinformatics/sparrow_study/population_stats/TD_hist_anim.gif")
 ```
 
 

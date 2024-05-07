@@ -70,10 +70,12 @@ td_hist_chrom <- data |>
         labs(x="Tajima's D",
              y="Count") +
         ggtitle('Coverage {closest_state}x') +
-        #labs(title=paste("Coverage:", data$coverage[current_frame()] )) +
         transition_states(states = coverage, transition_length = 2, state_length = 5)
 animate(td_hist_chrom, fps=20, duration=10, res=150, height=3, width=5, units="in")
 anim_save("~/Desktop/Current_Classes/Applied_Bioinformatics/sparrow_study/population_stats/TD_hist_anim.gif")
 ```
+
+
+
 
 

@@ -5,10 +5,29 @@ library(factoextra)
 library(glue)
 library(cowplot)
 library(ggrepel)
-
+library(gganimate); library(gifski)
 # metadata
 meta <- read_tsv("~/Desktop/samples.tsv")
 meta$short_basenames <- sub("^.*Mmelodia_(.*)$", "\\1", meta$`file name`)
+
+
+unique(meta$group)
+
+meta_groups <- c("Assateague Island", "Hog Island", "Pea Island")
+meta$used_group <- NA
+for (i in 1:nrow(meta)) {
+    g <- meta$group[i]
+    n <- meta$group_num[i]
+    if (g == "barrier island") {
+        val <- meta_groups[meta$group_num[i]]
+    } else if (n %in% c(4, 5)) {
+        val <- "Coastal Mainland"
+    } else {
+        val <- "Inland"
+    }
+    meta$used_group[i] <- val
+}
+rm(g, n, val)
 
 # coverage names
 coverage_list <- c("cov_1", "cov_3", "cov_5", "cov_7", "cov_10", "cov_15", "cov_20")
@@ -41,12 +60,13 @@ file_names <- lapply(bam_list, create_file_names)
 ```
 
 
-```{r, fig.height=15, fig.width=10, echo=FALSE, message=FALSE, error=FALSE}
+```{r, fig.height=15, fig.width=10, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
 # creating pca plots
 only_full_names <- file_names[[7]]$short_basenames # change back to 7
 cluster_to_uniq_df <- data.frame(coverage = c(), num = c(), pc_count = c(), data = c(), clust_count = c())
 #clusters <- 6
 pcs_for_kmeans <- 4
+clusters_for_plot <- 5
 plot_list <- c()
 
 for (clusters in 1:10) {
@@ -65,13 +85,13 @@ for (j in 1:15) {
         vectors$index <- seq(from=1, to=nrow(vectors))
         vectors <- left_join(vectors, names, by="index")
         vectors <- left_join(vectors, meta, by="short_basenames")
-        vectors$group <- as.factor(vectors$group)
+        vectors$group <- as.factor(vectors$used_group)
         
         # all files in each coverage level
         vect_out <- vectors |>
-            select(colors, group) |>
+            select(colors, used_group) |>
             group_by(colors) |>
-            summarise(val = length(unique(group))) |>
+            summarise(val = length(unique(used_group))) |>
             summarise(sum(val) / length(colors))
         
         cluster_to_uniq_df <- rbind(cluster_to_uniq_df, data.frame(coverage=vectors$cov[1],
@@ -82,10 +102,10 @@ for (j in 1:15) {
         
         #only files that make it through full coverage
         vect_out2 <- vectors |>
-            select(colors, group, short_basenames) |>
+            select(colors, used_group, short_basenames) |>
             filter(short_basenames %in% only_full_names) |>
             group_by(colors) |>
-            summarise(val = length(unique(group))) |>
+            summarise(val = length(unique(used_group))) |>
             summarise(sum(val) / length(colors))
         
         cluster_to_uniq_df <- rbind(cluster_to_uniq_df, data.frame(coverage=vectors$cov[1],
@@ -94,66 +114,148 @@ for (j in 1:15) {
                                                                    data="full",
                                                                    clust_count=clusters))
         
-    # if (j == pcs_for_kmeans) {
-    #     cov_num <- as.integer(sub("^cov_(.*)$", "\\1", coverage_list[i])) / 2
-    #     plot1 <- vectors |>
-    #         ggplot(aes(x=X1, y=X2, color=colors, shape=group)) +
-    #             geom_point(size =1.5, ) +
-    #             labs(title=glue("{cov_num}x Coverage"),
-    #                  x=glue("PC1: {PC1_per}%"),
-    #                  y=glue("PC2: {PC2_per}%"),
-    #                  color="Kmeans Cluster") +
-    #             # geom_text_repel(aes(label=short_basenames),
-    #             #         size=1,
-    #             #         max.overlaps = Inf,
-    #             #         segment.color = NA,
-    #             #         na.rm = TRUE) +
-    #             theme_cowplot() #+
-    #             #scale_color_manual(values=c("red", "blue", "green", "black"))
-    # 
-    #     if (vectors$cov[1] == "cov_20") {
-    #         legend <- get_legend(plot1 + theme(legend.justification="center"))
-    #         plot1 <- plot1 + theme(legend.position = "none")
-    #     } else {
-    #         plot1 <- plot1 + theme(legend.position = "none")
-    #     }
-    #     
-    #     e_vals <- data.frame(sort(e_matrix$values, decreasing = TRUE))
-    #     e_vals$e_num <- seq(from=1, to=nrow(e_vals))
-    #     names(e_vals) <- c("e_values", "e_num")
-    #     plot2 <- e_vals |>
-    #         ggplot(aes(x=e_values, y=e_num)) +
-    #             geom_point() +
-    #             geom_line() +
-    #             labs(title="Eigenvalues",
-    #                  x="",
-    #                  y="") +
-    #             theme_cowplot() +
-    #             scale_y_reverse() +
-    #             theme(plot.title=element_text(size=8),
-    #                   axis.text.x=element_text(size=8))
-    #     
-    #     plot <- plot_grid(plot1, plot2, NULL, rel_widths=c(3,0.9,0.1), ncol=3)
-    #     plot_list[[i]] <- plot
-    #     }
+    if (j == pcs_for_kmeans & clusters == clusters_for_plot) {
+        cov_num <- as.integer(sub("^cov_(.*)$", "\\1", coverage_list[i])) / 2
+        plot1 <- vectors |>
+            ggplot(aes(x=X1, y=X2, color=colors, shape=used_group)) +
+                geom_point(size =1.5, ) +
+                labs(title=glue("{cov_num}x Coverage"),
+                     x=glue("PC1: {PC1_per}%"),
+                     y=glue("PC2: {PC2_per}%"),
+                     color="Kmeans Cluster") +
+                # geom_text_repel(aes(label=short_basenames),
+                #         size=1,
+                #         max.overlaps = Inf,
+                #         segment.color = NA,
+                #         na.rm = TRUE) +
+                theme_cowplot() #+
+                #scale_color_manual(values=c("red", "blue", "green", "black"))
+
+        if (vectors$cov[1] == "cov_20") {
+            legend <- get_legend(plot1 + theme(legend.justification="center"))
+            plot1 <- plot1 + theme(legend.position = "none")
+        } else {
+            plot1 <- plot1 + theme(legend.position = "none")
+        }
+
+        e_vals <- data.frame(sort(e_matrix$values, decreasing = TRUE))
+        e_vals$e_num <- seq(from=1, to=nrow(e_vals))
+        names(e_vals) <- c("e_values", "e_num")
+        plot2 <- e_vals |>
+            ggplot(aes(x=e_values, y=e_num)) +
+                geom_point() +
+                geom_line() +
+                labs(title="Eigenvalues",
+                     x="",
+                     y="") +
+                theme_cowplot() +
+                scale_y_reverse() +
+                theme(plot.title=element_text(size=8),
+                      axis.text.x=element_text(size=8))
+
+        plot <- plot_grid(plot1, plot2, NULL, rel_widths=c(3,0.9,0.1), ncol=3)
+        plot_list[[i]] <- plot
+        }
     }
 }}
-# plot_list[[length(plot_list) + 1]] <- legend
-# combined_plot <- plot_grid(plotlist = plot_list, ncol = 2)
-# print(combined_plot)
+plot_list[[length(plot_list) + 1]] <- legend
+combined_plot <- plot_grid(plotlist = plot_list, ncol = 2)
+print(combined_plot)
 #ggsave("~/Desktop/combined_plot.png", plot = combined_plot, width = 10, height = 15, units = "in", dpi = 300)
 
 #ggsave("~/Desktop/combined_plot.png", plot = combined_plot, width = 10, height = 15, units = "in", dpi = 300)
 
 ```
 
+```{r, fig.width=8, fig.height=10}
+# PCA with animate
+file <- "~/Desktop/Current_Classes/Applied_bioinformatics/sparrow_study/data/pca_clusters_groupn.csv"
+pca_import <- read_csv(file)
+
+unique(pca_import$group)
+
+pca_import_groups <- c("Assateague Island", "Hog Island", "Pea Island")
+pca_import$used_group <- NA
+for (i in 1:nrow(pca_import)) {
+    g <- pca_import$group[i]
+    n <- pca_import$group_num[i]
+    if (g == "barrier island") {
+        val <- pca_import_groups[pca_import$group_num[i]]
+    } else if (n %in% c(4, 5)) {
+        val <- "Coastal Mainland"
+    } else {
+        val <- "Inland"
+    }
+    pca_import$used_group[i] <- val
+}
+rm(g, n, val)
+
+colors <- c(blue="#EF767A", gray="#456990", orange="#49BEAA", pink="#2F4B26", red="#EEB868")
+l <- c(blue="1", gray="2", orange="3", pink="4", red="5")
+plot_list <- c()
+i <- 1
+legend <- NA
+for (c in unique(pca_import$coverage)) {
+        plot <- pca_import |>
+        filter(coverage == c) |> 
+        ggplot(aes(x=X, y=Y, color=color, shape=used_group)) +
+            geom_point(size =1.5, ) +
+            labs(title=glue("{c}x Coverage"),
+                 x=glue("PC1: {round(pca_import$pc1_pcnt[pca_import$coverage == c][1], digits=2)}%"),
+                 y=glue("PC2: {round(pca_import$pc2_pcnt[pca_import$coverage == c][1], digits=2)}%"),
+                 color="Kmeans Cluster",
+                 shape="Group") +
+            scale_color_manual(values = colors, labels=l) +
+            theme_cowplot()
+
+        
+        if (c == 10) {
+            legend <- get_legend(plot + theme(legend.justification="center", 
+                                              legend.box = "horizontal"))
+            plot <- plot + theme(legend.position = "none")
+        } else {
+            plot <- plot + theme(legend.position = "none")
+        }
+        
+        plot_list[[i]] <- plot
+        i <- i + 1
+
+}
+plot_list[[length(plot_list) + 1]] <- legend
+plots <- plot_grid(plotlist = plot_list, ncol = 4)
+plots
+ggsave("pca_all.png", height = 8, width = 17, dpi="retina")
+#combined_plot <- plot_grid(plots, legend, ncol = 2, rel_widths=c(4,1))
+#print(combined_plot)
+```
+
+
+
+```{r}
+animate(plot1, fps=20, duration=20, res=150, height=3, width=5, units="in")
+
+anim <- gganimate(data, nframes = 10, fun = update_plot)  # Set number of frames
+
+anim_save(paste0("~/Desktop/Current_Classes/Applied_bioinformatics/sparrow_study/data/", "pca.gif"))
+
+plot1
+
+        plot_list[[i]] <- plot1
+        #}
+#plot_list[[length(plot_list) + 1]] <- legend
+combined_plot <- plot_grid(plotlist = plot_list, ncol = 2)
+print(combined_plot)
+#ggsave("~/Desktop/combined_plot.png", plot = combined_plot, width = 10, height = 15, units = "in", dpi = 300)
+
+#ggsave("~/Desktop/combined_plot.png", plot = combined_plot, width = 10, height = 15, units = "in", dpi = 300)
+
+```
+
+
 ```{r, fig.width=15, fig.height=7.5}
 custom_labels <- c(all = "All Files", full = "Only Full Files")
 
 cluster_to_uniq_df$coverage <- factor(cluster_to_uniq_df$coverage, levels=coverage_list, ordered=TRUE)
-
-cluster_to_uniq_df |> 
-    select(data, )
 
 cluster_to_uniq_df |>
     ggplot(aes(x=coverage, y=sum.val..length.colors., fill=pc_out)) +
@@ -174,21 +276,14 @@ cluster_to_uniq_df |>
         geom_boxplot() +
         labs(title="RefSeq Genome",
              x="Coverage",
-             y="That Value That You Wanted") +
+             y="Categorization Error",
+             fill="Data Source") +
         scale_x_discrete(labels=c("0.5x", "1.5x", "2.5x", "3.5x", "5x", "7.5x", "10x")) +
         theme_minimal() +
         theme(plot.title=element_text(size=10),
               axis.text.x=element_text(size=10)) +
-        scale_fill_manual(values=c("pink", "green")) +
+        scale_fill_manual(values=c("pink", "green"), labels=c("All Files", "Only Full Files")) +
         facet_wrap(~ clust_count)
         #scale_fill_gradient(low="#ffd60a", high="#000814") 
+ggsave(paste0("categorization_error_all_clusters.png"), height = 6, width = 12, units="in", dpi="retina")
 ```
-```{r}
-line = 1
-last_var = NA
-choices = c("Y", "N")
-
-ifelse(line %% 2 == 0, {cyano = ifelse(last_var == "N", "Y", "N"); line = line + 1}, {choice = sample(choices, 1); last_var = choice; cyano = choice; line = line + 1})
-
-```
-

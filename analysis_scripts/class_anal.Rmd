@@ -15,8 +15,8 @@ require(ggpubr)
 
 ```{r cars}
 # locations
-out_dir <- "~/Desktop/proj_stats/"
-stats <- "~/Desktop/proj_stats/"
+out_dir <- "~/Desktop/Current_Classes/Applied_Bioinformatics/proj_stats_full/"
+stats <- "~/Desktop/Current_Classes/Applied_Bioinformatics/proj_stats_full/"
 
 # reading in the data
 df <- read.csv2(paste0(stats, "out.csv"), sep=",")
@@ -81,7 +81,7 @@ for (i in 1:nrow(cov_tab)) {
 
 kable(cov_tab) |> 
  kable_styling(bootstrap_options = "bordered") |>
- as_image(file = "cov.png") 
+ as_image(file = paste0(out_dir, "cov.png"))
 ```
 
 
@@ -94,12 +94,21 @@ by_file <- df |>
 by_file
 
 by_scaffold_type <- df |> 
-    ggplot(aes(x=X.rname, y=meandepth)) +
-        geom_boxplot() +
+  filter(coverage_target == "full") |> 
+  #filter(scaffold_type == "NC") |> 
+    ggplot(aes(x=X.rname, y=meandepth, fill=scaffold_type)) +
+        geom_boxplot(outlier.size=0.1, outlier.stroke = 0.5, linewidth=0.1) +
         ylim(0, 150) +
-    theme(axis.text.x = element_text(angle = 180, size = 3))
+        labs(x="Scaffolds", 
+             y="Mean Depth",
+             fill="Scaffold Type") +
+        #theme(axis.text.x = element_blank()#element_text(angle = 90, size = 2),
+        #     ) +
+        theme(axis.text.x = element_blank()) +#element_text(angle = 90)) +
+        scale_fill_manual(values = c("forestgreen", "pink"))
 by_scaffold_type
-
+ggsave(filename=paste0(out_dir, "scaffolds_full.png"), width=10, height=3, units="in", dpi="retina")
+#ggsave(filename=paste0(out_dir, "scaffolds_full_NC.png"), width=10, height=3, units="in", dpi="retina")
 ```
 
 ```{r}
@@ -147,7 +156,10 @@ one_x_tab <- one_X_coverage |>
     summarise(one_x_median_per_fastq = median(one_X_cov_med) / 2,
               one_x_mean_per_fastq = mean(one_X_cov_mean) / 2) 
 
-one_x_tab
+one_x_tab |> 
+  kable() |> 
+  kable_styling(bootstrap_options = "bordered") |> 
+  as_image(file = paste0(out_dir, "one_x_read_count_table.png"))
 
 ```
 
@@ -155,21 +167,52 @@ one_x_tab
 df |> 
     select(coverage, meandepth, scaffold_type, coverage_target) |> 
     group_by(scaffold_type, coverage_target) |> 
-    summarise(mean_depth = mean(meandepth))
+    summarise(mean_depth = mean(meandepth)) |> 
+    kable() |> 
+    kable_styling(bootstrap_options = "bordered") |>
+    as_image(file = paste0(out_dir, "actual_coverage_calcs_table.png"))
+  
 ```
 
 
-```{r, fig.height=20, fig.width=5}
+```{r}
+one_X_coverage$coverage_target_real <- NA
+for (i in 1:nrow(one_X_coverage)) {
+  if (one_X_coverage$coverage_target[i] != "full") {
+  one_X_coverage$coverage_target_real[i] <- as.integer(sub("^cov_(.*)$", "\\1", one_X_coverage$coverage_target[i])) / 2
+  } else {
+     one_X_coverage$coverage_target_real[i] <- "full"
+  }
+}
+level_order = c("0.5","1","1.5","2.5","3.5","5","7.5","10","full")
+one_X_coverage$coverage_target_real <- factor(one_X_coverage$coverage_target_real, levels = level_order)
+
+l <- labeller(coverage_target_real=c("0.5"="0.5x Coverage",
+                                     "1"="1x Coverage",
+                                     "1.5"="1.5x Coverage",
+                                     "2.5"="2.5x Coverage",
+                                     "3.5"="3.5x Coverage",
+                                     "5"="5x Coverage",
+                                     "7.5"="7.5x Coverage",
+                                     "10"="10x Coverage",
+                                     "full"))
+    
 one_X_coverage |> 
-    select(Filename, one_X_cov_mean, scaffold_type, coverage_target) |> 
+    filter(coverage_target != "full") |> 
+    select(Filename, one_X_cov_mean, scaffold_type, coverage_target_real) |> 
     ggplot(aes(x=Filename, y=one_X_cov_mean/1e7, color=scaffold_type)) +
         geom_point() +
         theme_minimal() +
-        labs(x="Filename", y="Count of Reads in 1X coverage (10 Millions)", color="Scaffold Type") +
-        theme(axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=3)) +
+        labs(x="File", y="Count of Reads in 1X coverage (10 Millions)", color="Scaffold Type") +
+        theme(#axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=1),
+              axis.text.x = element_blank(),
+              #axis.title.y = element_text(size=8),
+              #axis.title.x = element_text(size=8)
+              ) +
         scale_color_manual(values = c("forestgreen", "pink")) +
-        facet_wrap(~ coverage_target, ncol = 1)
-ggsave(paste0(out_dir, "one_X_coverage_by_file_plot.png"), height = 20, width = 5)
+        facet_wrap(~ coverage_target_real, ncol = 4, labeller = l)
+#ggsave(filename=paste0(out_dir, "one_X_coverage_full.png"), width=5, height=3, units="in", dpi="retina")
+ggsave(paste0(out_dir, "one_X_coverage_all.png"), height = 8, width = 17)
 
 #kable(one_X_coverage) |> 
 #    kable_styling(bootstrap_options = "bordered") |>
@@ -179,7 +222,9 @@ ggsave(paste0(out_dir, "one_X_coverage_by_file_plot.png"), height = 20, width = 
 
 ```{r}
 df |>
-    select(meandepth, read_Count, Filename, scaffold_type) |> 
+    #filter(coverage_target == "full") |> 
+    filter(coverage_target != "full") |>
+    select(meandepth, read_Count, Filename, scaffold_type, coverage_target) |> 
     group_by(Filename, scaffold_type) |> 
     summarise(read_count = median(read_Count) / 1e8,
               median_depth = median(meandepth)) |> 
@@ -188,12 +233,60 @@ df |>
         labs(x="Median Read Count (100 millions)", y="Median Scaffold Depth", color="Scaffold Type") +
         geom_line(aes(group=Filename), color = "black", alpha = 0.5) +
         geom_smooth(method = "lm", se=FALSE, size=0.5) +
-        #stat_cor(aes(label = ..rr.label..), label.x = 0.75) +
-        stat_regline_equation() +
+        stat_cor(aes(label = ..rr.label..), label.x = 0.1) +
+        #stat_regline_equation() +
         theme_minimal() +
         scale_color_manual(values = c("forestgreen", "pink"))
-ggsave("depth_by_read_count_median.png", height = 5, width = 7)
+ggsave(paste0(out_dir, "depth_by_read_count_full.png"), height = 5, width = 7)
 ```
+
+```{r}
+unfiltered <- "~/Desktop/Current_Classes/Applied_Bioinformatics/sparrow_study/data/snps_unfiltered.csv"
+filtered <- "~/Desktop/Current_Classes/Applied_Bioinformatics/sparrow_study/data/snps.csv"
+snps_filtered <- read_delim(filtered, delim=" ", col_names=FALSE)
+snps_filtered$status <- "filtered"
+names(snps_filtered) <- c("file", "snps", "status")
+snps_unfiltered <- read_delim(unfiltered, delim=" ", col_names=FALSE)
+snps_unfiltered$status <- "unfiltered"
+names(snps_unfiltered) <- c("file", "snps", "status")
+snps <- rbind(snps_filtered, snps_unfiltered)
+rm(snps_filtered, snps_unfiltered)
+#cov_10/bcf_out/2551-18714_Mmelodia_ScarboroughMarshME_20160731_complete.bcf.gz
+snps$coverage <- sub("^(.*)/bcf_out.*$", "\\1", snps$file)
+snps <- snps |> 
+  filter(coverage != "full")
+
+levs <- c("cov_1", "cov_3", "cov_5", "cov_7", "cov_10", "cov_15", "cov_20")
+coverage_list <- c("cov_1"="0.5x", "cov_3"="1.5x", "cov_5"="2.5x", "cov_7"="3.5x", "cov_10"="5x", "cov_15"="7.5x", "cov_20"="10x")
+snps$coverage <- factor(snps$coverage, levels=levs, labels=coverage_list)
+
+snps$file <- sub("^.*/bcf_out/(.*)_complete.bcf.gz$", "\\1", snps$file)
+```
+
+```{r}
+
+snps_anim <- snps |> 
+  filter(coverage != "full") |> 
+  ggplot(aes(y=snps/1000000, x=file, color=status)) +
+    geom_point() +
+    geom_line(aes(group=file), color = "black", alpha = 0.5) +
+    labs(x="file",
+         y="SNPs (millions)",
+         color="Filtered Status") +
+    #facet_wrap(~coverage) +
+    theme_minimal_grid() +
+    scale_color_manual(values=c("forestgreen", "pink")) +
+    theme(axis.text.x = element_blank()) +
+    ggtitle('Coverage: {closest_state}') +
+    transition_states(states = coverage, transition_length = 3, state_length = 5) +
+    exit_recolor(color = "black") +
+    exit_fade(alpha=0.5)
+
+animate(snps_anim, fps=20, duration=10, res=150, height=3, width=5, units="in")
+anim_save("~/Desktop/Current_Classes/Applied_Bioinformatics/sparrow_study/data/SNPS_anim.gif")
+```
+
+
 
 ```{r, fig.height=30, fig.width=10}
 depth_table_by_file_scaffold_type |> 

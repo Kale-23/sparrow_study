@@ -1,0 +1,69 @@
+row	file name	band	site	subspecies	group	group_num
+14	L1_S04_SOSP-52953_Mmelodia_Assateague-MD_2011	SOSP-52953	Assateague-MD	atlantica	barrier island	1
+28	L1_S18_SOSP-52958_Mmelodia_Assateague-MD_2011	SOSP-52958	Assateague-MD	atlantica	barrier island	1
+33	L1_S23_SOSP-52949_Mmelodia_Assateague-MD_2011	SOSP-52949	Assateague-MD	atlantica	barrier island	1
+35	L1_S26_SOSP-52950_Mmelodia_Assateague-MD_2011	SOSP-52950	Assateague-MD	atlantica	barrier island	1
+39	L3_S01_SOSP-52954_Mmelodia_Assateague-MD_2011	SOSP-52954	Assateague-MD	atlantica	barrier island	1
+46	L3_S08_SOSP-52957_Mmelodia_Assateague-MD_2011	SOSP-52957	Assateague-MD	atlantica	barrier island	1
+57	L3_S19_SOSP-52959_Mmelodia_Assateague-MD_2011	SOSP-52959	Assateague-MD	atlantica	barrier island	1
+16	L1_S06_2831-61090_Mmelodia_HogIsland-VA_2022	2831-61090	HogIsland-VA	atlantica	barrier island	2
+23	L1_S13_2831-61083_Mmelodia_HogIsland-VA_2022	2831-61083	HogIsland-VA	atlantica	barrier island	2
+32	L1_S22_2831-61086_Mmelodia_HogIsland-VA_2022	2831-61086	HogIsland-VA	atlantica	barrier island	2
+47	L3_S09_2831-61089_Mmelodia_HogIsland-VA_2022	2831-61089	HogIsland-VA	atlantica	barrier island	2
+53	L3_S15_2831-61087_Mmelodia_HogIsland-VA_2022	2831-61087	HogIsland-VA	atlantica	barrier island	2
+61	L3_S23_2831-61085_Mmelodia_HogIsland-VA_2022	2831-61085	HogIsland-VA	atlantica	barrier island	2
+63	L3_S25_2831-61088_Mmelodia_HogIsland-VA_2022	2831-61088	HogIsland-VA	atlantica	barrier island	2
+21	L1_S11_2471-03617_Mmelodia_PeaIslandNWR-NC_2022	2471-03617	PeaIslandNWR-NC	atlantica	barrier island	3
+25	L1_S15_2831-61091_Mmelodia_PeaIslandNWR-NC_2022	2831-61091	PeaIslandNWR-NC	atlantica	barrier island	3
+30	L1_S20_2831-61097_Mmelodia_PeaIslandNWR-NC_2022	2831-61097	PeaIslandNWR-NC	atlantica	barrier island	3
+36	L1_S27_2831-61092_Mmelodia_PeaIslandNWR-NC_2022	2831-61092	PeaIslandNWR-NC	atlantica	barrier island	3
+45	L3_S07_2831-61098_Mmelodia_PeaIslandNWR-NC_2022	2831-61098	PeaIslandNWR-NC	atlantica	barrier island	3
+52	L3_S14_2831-61095_Mmelodia_PeaIslandNWR-NC_2022	2831-61095	PeaIslandNWR-NC	atlantica	barrier island	3
+55	L3_S17_2831-61094_Mmelodia_PeaIslandNWR-NC_2022	2831-61094	PeaIslandNWR-NC	atlantica	barrier island	3
+64	L3_S26_2831-61096_Mmelodia_PeaIslandNWR-NC_2022	2831-61096	PeaIslandNWR-NC	atlantica	barrier island	3
+18	L1_S08_2821-14856_Mmelodia_DealIslandWMA-MD_2021	2821-14856	DealIslandWMA-MD	atlantica	chesapeake bay	4
+1	2551-18670_Mmelodia_FishingBayMD_20150619	2551-18670	FishingBayMD	atlantica	chesapeake bay	4
+37	L1_S28_2831-61025_Mmelodia_FishingBayWMA-MD_2021	2831-61025	FishingBayWMA-MD	atlantica	chesapeake bay	4
+51	L3_S13_2831-61079_Mmelodia_GuardShoreWMA-VA_2022	2831-61079	GuardShoreWMA-VA	atlantica	chesapeake bay	4
+27	L1_S17_2821-14828_Mmelodia_SaxisWMA-VA_2021	2821-14828	SaxisWMA-VA	atlantica	chesapeake bay	4
+68	L3_S30_2831-61068_Mmelodia_DelawareSeashoreSP-DE_2022	2831-61068	DelawareSeashoreSP-DE	atlantica	coastal mainland	5
+20	L1_S10_2831-61011_Mmelodia_FortescueWMA-NJ_2021	2831-61011	FortescueWMA-NJ	atlantica	coastal mainland	5
+54	L3_S16_2831-61146_Mmelodia_GreatBayBlvdWMA-NJ_2021	2831-61146	GreatBayBlvdWMA-NJ	atlantica	coastal mainland	5
+59	L3_S21_2831-61143_Mmelodia_GreatBayBlvdWMA-NJ_2021	2831-61143	GreatBayBlvdWMA-NJ	atlantica	coastal mainland	5
+6	2551-20629_Mmelodia_JohnHChafeeRI_20150702	2551-20629	JohnHChafeeRI	atlantica	coastal mainland	5
+5	2551-20622_Mmelodia_LieutenantIslandMA_20150625	2551-20622	LieutenantIslandMA	atlantica	coastal mainland	5
+2	2551-18698_Mmelodia_LittleCreekDE_20160630	2551-18698	LittleCreekDE	atlantica	coastal mainland	5
+7	2551-86950_Mmelodia_LittleCreekDE_20160615	2551-86950	LittleCreekDE	atlantica	coastal mainland	5
+10	2551-86994_Mmelodia_MedouieCreekNantucketMA_20160712	2551-86994	MedouieCreekNantucketMA	atlantica	coastal mainland	5
+13	L1_S03_2471-03656_Mmelodia_PonquogueBeach-NY_2022	2471-03656	PonquogueBeach-NY	atlantica	coastal mainland	5
+26	L1_S16_2471-03640_Mmelodia_PonquogueBeach-NY_2022	2471-03640	PonquogueBeach-NY	atlantica	coastal mainland	5
+62	L3_S24_2471-03641_Mmelodia_PonquogueBeach-NY_2022	2471-03641	PonquogueBeach-NY	atlantica	coastal mainland	5
+66	L3_S28_2471-03646_Mmelodia_PonquogueBeach-NY_2022	2471-03646	PonquogueBeach-NY	atlantica	coastal mainland	5
+34	L1_S24_2821-14882_Mmelodia_PrimehookNWR-DE_2021	2821-14882	PrimehookNWR-DE	atlantica	coastal mainland	5
+41	L3_S03_2821-14866_Mmelodia_PrimehookNWR-DE_2021	2821-14866	PrimehookNWR-DE	atlantica	coastal mainland	5
+12	L1_S02_2821-14898_Mmelodia_SwanBayWMA-NJ_2021	2821-14898	SwanBayWMA-NJ	atlantica	coastal mainland	5
+40	L3_S02_2821-14900_Mmelodia_SwanBayWMA-NJ_2021	2821-14900	SwanBayWMA-NJ	atlantica	coastal mainland	5
+8	2551-86968_Mmelodia_TuckahoeNJ_20160621	2551-86968	TuckahoeNJ	atlantica	coastal mainland	5
+3	2551-18706_Mmelodia_WertheimNY_20160723	2551-18706	WertheimNY	atlantica	coastal mainland	5
+65	L3_S27_SOSP-Yellow-34_Mmelodia_ClaytorLake-VA_2011	SOSP-Yellow-34	ClaytorLake-VA	melodia	inland virginia	6
+17	L1_S07_SOSP-Yellow-25_Mmelodia_Blacksburg-VA_2011	SOSP-Yellow-25	Blacksburg-VA	melodia	inland virginia	6
+43	L3_S05_SOSP-Yellow-18_Mmelodia_Blacksburg-VA_2011	SOSP-Yellow-18	Blacksburg-VA	melodia	inland virginia	6
+50	L3_S12_SOSP-Yellow-1_Mmelodia_Blacksburg-VA_2011	SOSP-Yellow-1	Blacksburg-VA	melodia	inland virginia	6
+11	L1_S01_SOSP-Yellow-13_Mmelodia_ClaytorLake-VA_2011	SOSP-Yellow-13	ClaytorLake-VA	melodia	inland virginia	6
+22	L1_S12_SOSP-68739_Mmelodia_Frostburg-MD_2011	SOSP-68739	Frostburg-MD	melodia	inland maryland	7
+24	L1_S14_SOSP-68779_Mmelodia_Frostburg-MD_2021	SOSP-68779	Frostburg-MD	melodia	inland maryland	7
+42	L3_S04_SOSP-2_Mmelodia_Frostburg-MD_2011	SOSP-2	Frostburg-MD	melodia	inland maryland	7
+58	L3_S20_SOSP-68772_Mmelodia_Frostburg-MD_2011	SOSP-68772	Frostburg-MD	melodia	inland maryland	7
+19	L1_S09_2771-11432_Mmelodia_Rochester-NY_2020	2771-11432	Rochester-NY	melodia	inland new york	8
+29	L1_S19_2771-11397_Mmelodia_Rochester-NY_2020	2771-11397	Rochester-NY	melodia	inland new york	8
+44	L3_S06_2771-11440_Mmelodia_Rochester-NY_2020	2771-11440	Rochester-NY	melodia	inland new york	8
+48	L3_S10_2771-11450_Mmelodia_Rochester-NY_2020	2771-11450	Rochester-NY	melodia	inland new york	8
+56	L3_S18_2771-11431_Mmelodia_Rochester-NY_2020	2771-11431	Rochester-NY	melodia	inland new york	8
+15	L1_S05_2471-03695_Mmelodia_AroostookNWR-ME_2022	2471-03695	AroostookNWR-ME	melodia	maine	9
+31	L1_S21_2471-03690_Mmelodia_AroostookNWR-ME_2022	2471-03690	AroostookNWR-ME	melodia	maine	9
+38	L1_S30_2941-40412_Mmelodia_AroostookNWR-ME_2022	2941-40412	AroostookNWR-ME	melodia	maine	9
+49	L3_S11_2941-40401_Mmelodia_AroostookNWR-ME_2022	2941-40401	AroostookNWR-ME	melodia	maine	9
+67	L3_S29_2941-40416_Mmelodia_AroostookNWR-ME_2022	2941-40416	AroostookNWR-ME	melodia	maine	9
+9	2551-86992_Mmelodia_HobartStreamME_20160706	2551-86992	HobartStreamME	melodia	maine	9
+60	L3_S22_2471-03693_Mmelodia_LoringAirfield-ME_2022	2471-03693	LoringAirfield-ME	melodia	maine	9
+4	2551-18714_Mmelodia_ScarboroughMarshME_20160731	2551-18714	ScarboroughMarshME	melodia	maine	9

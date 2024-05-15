@@ -1,7 +1,7 @@
 """
-File is called mleaflet.py ,  actually uses alternative library, folium. 
+actually uses alternative library, folium. 
 
-python .\mleaflet.py geodata\pcangsd_cov_10_output.cov  .\geodata\bam_list_cov_10.txt 5.0
+python .\mapfolium.py geodata\pcangsd_cov_10_output.cov  .\geodata\bam_list_cov_10.txt 5.0
 """
 
 import sys
@@ -15,7 +15,7 @@ from kmeans import run_Kmeans
 
 
 def usage():
-    print("python .\mleaflet.py geodata\pcangsd_cov_10_output.cov  .\geodata\\bam_list_cov_10.txt 5.0") 
+    print("python .\mapfolium.py geodata\pcangsd_cov_10_output.cov  .\geodata\\bam_list_cov_10.txt 5.0") 
 
 def cases_up(sqt):
     ss = list(sqt)
